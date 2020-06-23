@@ -13,10 +13,7 @@ const LanguageService = {
       .first();
   },
 
-  //get language by ID
-  //get language head >
-
-  setLanguageHead(db, newHead, totalScore) {
+  setUsersLanguage(db, id, newHead, totalScore) {
     return db
       .from("language")
       .select(
@@ -26,11 +23,12 @@ const LanguageService = {
         "language.head",
         "language.total_score"
       )
+      .where({ id })
       .first()
       .update({ head: newHead, total_score: totalScore });
   },
 
-  setWordCount(db, language_id, id, correct_count, incorrect_count) {
+  setGuessWord(db, id, next, memory_value, correct_count, incorrect_count) {
     return db
       .from("word")
       .select(
@@ -43,8 +41,27 @@ const LanguageService = {
         "correct_count",
         "incorrect_count"
       )
-      .where({ language_id, id })
-      .update({ correct_count, incorrect_count });
+      .where({ id })
+      .first()
+      .update({ next, memory_value, correct_count, incorrect_count });
+  },
+
+  setWordInsert(db, id, next) {
+    return db
+      .from("word")
+      .select(
+        "id",
+        "language_id",
+        "original",
+        "translation",
+        "next",
+        "memory_value",
+        "correct_count",
+        "incorrect_count"
+      )
+      .where({ id })
+      .first()
+      .update({ next });
   },
 
   getLanguageHead(db, language_id) {
@@ -59,7 +76,8 @@ const LanguageService = {
         "word.memory_value",
         "word.correct_count",
         "word.incorrect_count",
-        "language.total_score"
+        "language.total_score",
+        "language.head"
       )
       .leftJoin("language", "language.head", "word.id")
       .where({ "language.id": language_id })

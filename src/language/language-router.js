@@ -41,21 +41,17 @@ languageRouter.get("/", async (req, res, next) => {
 });
 
 languageRouter.get("/head", async (req, res, next) => {
+  //Need to redo this with Alex's joins
+
   try {
-    const language = await LanguageService.getUsersLanguage(
+    const head = await LanguageService.getLanguageHead(
       req.app.get("db"),
       req.language.id
     );
 
-    const head = await LanguageService.getLanguageHead(
-      req.app.get("db"),
-      req.language.id,
-      language.head
-    );
-
     res.json({
       nextWord: head.original,
-      totalScore: language.total_score,
+      totalScore: head.total_score,
       wordCorrectCount: head.correct_count,
       wordIncorrectCount: head.incorrect_count,
     });
@@ -72,67 +68,84 @@ languageRouter.post("/guess", jsonBodyParser, async (req, res, next) => {
       return res.status(400).json({ error: "Missing 'guess' in request body" });
     }
 
-    const language = await LanguageService.getUsersLanguage(
+    const languageAndHeadWord = await LanguageService.getLanguageHead(
       req.app.get("db"),
       req.language.id
     );
 
-    const head = await LanguageService.getLanguageHead(
-      req.app.get("db"),
-      req.language.id,
-      language.head
-    );
-
-    console.log("LANGUAGE ", language);
-    console.log("HEAD ", head);
-
-    //memory value > lower the memory value, the faster it comes back
-    //Move the head by the amount of memory value
-    //take memory value and multiply by 2
-    //Once it is wrong, the value gets incremented by 1
-    //move the head of the list by 1
-
-    //determine if the guess was correct
-    let isCorrect = guess === head.translation ? true : false;
-
-    // -----------UPDATE CALLS
-
-    //Set the new head
-    await LanguageService.setLanguageHead(
-      req.app.get("db"),
-      head.next,
-      isCorrect ? language.totalScore++ : language.totalScore
-    );
-
-    await LanguageService.setWordCount(
-      req.app.get("db"),
-      head.id,
-      isCorrect ? head.correct_count++ : head.correct_count,
-      isCorrect ? head.incorrect_count : head.incorrect_count++
-    );
-
-    // ------------SECOND CALL
-
-    const language2 = await LanguageService.getUsersLanguage(
+    const allWords = await LanguageService.getLanguageWords(
       req.app.get("db"),
       req.language.id
     );
 
-    const head2 = await LanguageService.getLanguageHead(
+    //check if correct
+    let isCorrect = guess === languageAndHeadWord.translation ? true : false;
+
+    //destruct all values
+    let m_memory_value;
+    let m_total_score = languageAndHeadWord.total_score;
+    let m_wordCorrectCount = languageAndHeadWord.correct_count;
+    let m_wordIncorrectCount = languageAndHeadWord.incorrect_count;
+    let m_answer = languageAndHeadWord.translation;
+    let m_nextWord = allWords.find(
+      (word) => word.id === languageAndHeadWord.next
+    );
+    let m_head = languageAndHeadWord.next;
+    if (isCorrect) {
+      m_memory_value = languageAndHeadWord.memory_value * 2;
+      m_total_score++;
+      m_wordCorrectCount++;
+    } else {
+      m_memory_value = 1;
+      m_wordIncorrectCount++;
+    }
+
+    //Iterate through the chain and insert in the right place
+    let iteratedWord = allWords.find(
+      (word) => word.id === languageAndHeadWord.id
+    );
+    let nextWordId;
+    for (let i = 0; i < m_memory_value; i++) {
+      nextWordId = iteratedWord.next;
+      if (nextWordId === null) {
+        break;
+      }
+      iteratedWord = allWords.find((word) => word.id === nextWordId);
+    }
+    let iteratedWordId = iteratedWord.id;
+    let iteratedWordNext = languageAndHeadWord.id;
+    let m_word_next = nextWordId;
+
+    //POST Updates:
+    await LanguageService.setUsersLanguage(
       req.app.get("db"),
       req.language.id,
-      language2.head
+      m_head,
+      m_total_score
     );
 
-    console.log("NEW LANGUAGE ", head2);
-    console.log("NEW HEAD ", head2);
+    await LanguageService.setGuessWord(
+      req.app.get("db"),
+      req.language.id,
+      m_word_next,
+      m_memory_value,
+      m_wordCorrectCount,
+      m_wordIncorrectCount
+    );
 
+    await LanguageService.setWordInsert(
+      req.app.get("db"),
+      iteratedWordId,
+      iteratedWordNext
+    );
+
+    //response
     res.status(200).json({
-      nextWord: head2.original,
-      totalScore: language.total_score,
-      wordCorrectCount: head.correct_count,
-      wordIncorrectCount: head.incorrect_count,
-      answer: head.translation,
+      nextWord: m_nextWord.original,
+      totalScore: m_total_score,
+      wordCorrectCount: m_nextWord.correct_count, //next word's correct count
+      wordIncorrectCount: m_nextWord.incorrect_count, //next word's incorrect count
+      answer: m_answer,
       isCorrect: isCorrect,
     });
   } catch (error) {
