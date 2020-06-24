@@ -13,6 +13,8 @@ const LanguageService = {
       .first();
   },
 
+  getLanguages(db) { return db .from("language") .select( "language.id", "language.name", "language.user_id", "language.head", "language.total_score" ); },
+
   setUsersLanguage(db, id, newHead, totalScore) {
     return db
       .from("language")

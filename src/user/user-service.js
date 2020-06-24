@@ -53,16 +53,16 @@ const UserService = {
       const seq = await db.from("word_id_seq").select("last_value").first();
 
       const languageWords = [
-        ["donde esta el bano", "where is the bathroom", 2],
-        ["disculpe", "excuse me", 3],
-        ["estoy perdido", "I'm lost", 4],
-        ["aqui", "here", 5],
+        ["¿Dønde estå el baño?", "Where is the bathroom?", 2],
+        ["Disculpe", "Excuse me", 3],
+        ["Estoy perdido", "I am lost", 4],
+        ["¿Cømo te llamas?", "What is your name?", 5],
         ["una bebida", "a drink", 6],
-        ["cuanto", "how much", 7],
-        ["por cuanto tiempo", "how long", 8],
-        ["por favor", "please", 9],
-        ["como esta", "how are you", 10],
-        ["como te llamas", "what's your name", null],
+        ["¿Cuånto cuesta?", "How much is it?", 7],
+        ["Yo (no) entiendo", "I do not understand", 8],
+        ["Por favor", "please", 9],
+        ["¿Cømo estå?", "How are you?", 10],
+        ["Mucho gusto", "Nice to meet you", null],
       ];
 
       const [languageHeadId] = await trx.into("word").insert(

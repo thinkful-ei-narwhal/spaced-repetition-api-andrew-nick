@@ -29,7 +29,10 @@ languageRouter.get("/", async (req, res, next) => {
       req.app.get("db"),
       req.language.id
     );
-
+      console.log(words);
+      console.log(req.language);
+      
+      
     res.json({
       language: req.language,
       words,
