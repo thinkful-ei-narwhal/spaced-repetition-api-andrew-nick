@@ -79,7 +79,17 @@ languageRouter.post("/guess", jsonBodyParser, async (req, res, next) => {
     );
 
     //check if correct
-    let isCorrect = guess === head.translation ? true : false;
+    guessCheck = guess
+      .toLowerCase()
+      .replace(/\s/g, "")
+      .replace(/[^\w\s]|_/g, "")
+      .replace(/\s+/g, " ");
+    translationCheck = head.translation
+      .toLowerCase()
+      .replace(/\s/g, "")
+      .replace(/[^\w\s]|_/g, "")
+      .replace(/\s+/g, " ");
+    let isCorrect = guessCheck === translationCheck ? true : false;
 
     //destruct all values
     let m_memory_value;

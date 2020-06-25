@@ -183,18 +183,21 @@ describe("User Endpoints", function () {
           total_score: 0,
           words: [
             {
-              original: "donde esta el bano",
-              translation: "where is the bathroom",
+              original: "¿Dønde estå el baño?",
+              translation: "Where is the bathroom?",
             },
-            { original: "disculpe", translation: "excuse me" },
-            { original: "estoy perdido", translation: "I'm lost" },
-            { original: "aqui", translation: "here" },
+            { original: "Disculpe", translation: "Excuse me" },
+            { original: "Estoy perdido", translation: "I am lost" },
+            { original: "¿Cømo te llamas?", translation: "What is your name?" },
             { original: "una bebida", translation: "a drink" },
-            { original: "cuanto", translation: "how much" },
-            { original: "por cuanto tiempo", translation: "how long" },
-            { original: "por favor", translation: "please" },
-            { original: "como esta", translation: "how are you" },
-            { original: "como te llamas", translation: "what's your name" },
+            { original: "¿Cuånto cuesta?", translation: "How much is it?" },
+            {
+              original: "Yo (no) entiendo",
+              translation: "I do not understand",
+            },
+            { original: "Por favor", translation: "please" },
+            { original: "¿Cømo estå?", translation: "How are you?" },
+            { original: "Mucho gusto", translation: "Nice to meet you" },
           ],
         };
         return supertest(app)
