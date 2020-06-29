@@ -1,6 +1,7 @@
 const express = require("express");
 const LanguageService = require("./language-service");
 const { requireAuth } = require("../middleware/jwt-auth");
+const LinkedList = require("./../datastructures/LinkedList");
 const jsonBodyParser = express.json();
 const languageRouter = express.Router();
 
@@ -78,6 +79,19 @@ languageRouter.post("/guess", jsonBodyParser, async (req, res, next) => {
       req.language.id
     );
 
+    //populate linked list
+    const LL = new LinkedList();
+    let word = head;
+    while (word !== null) {
+      LL.insertLast(word);
+      if (word.next === null) {
+        break;
+      }
+      word = allWords.find((wordInList) => wordInList.id === word.next);
+    }
+
+    // LL.printAllNodes();
+
     //check if correct
     guessCheck = guess
       .toLowerCase()
@@ -91,69 +105,42 @@ languageRouter.post("/guess", jsonBodyParser, async (req, res, next) => {
       .replace(/\s+/g, " ");
     let isCorrect = guessCheck === translationCheck ? true : false;
 
-    //destruct all values
-    let m_memory_value;
+    //update Head
+    const updatedHead = { ...head };
     let m_total_score = head.total_score;
-    let m_wordCorrectCount = head.correct_count;
-    let m_wordIncorrectCount = head.incorrect_count;
-    let m_answer = head.translation;
-    let m_nextWord = allWords.find((word) => word.id === head.next);
-    let m_shiftHead = head.next;
     if (isCorrect) {
-      m_memory_value = head.memory_value * 2;
+      updatedHead.memory_value = head.memory_value * 2;
+      updatedHead.correct_count = head.correct_count + 1;
       m_total_score++;
-      m_wordCorrectCount++;
     } else {
-      m_memory_value = 1;
-      m_wordIncorrectCount++;
+      updatedHead.memory_value = 1;
+      updatedHead.incorrect_count = head.incorrect_count + 1;
     }
 
-    //Iterate through the chain and insert in the right place
-    let iteratedWord = allWords.find((word) => word.id === head.id);
-    let nextWordId;
-    for (let i = 0; i < m_memory_value; i++) {
-      nextWordId = iteratedWord.next;
-      if (nextWordId === null) {
-        break;
-      }
-      iteratedWord = allWords.find((word) => word.id === nextWordId);
+    //Update word, shift by memory value, update head
+    LL.shiftHead();
+    if (updatedHead.memory_value > LL.size()) {
+      LL.insertLast(updatedHead);
+    } else {
+      LL.insertAt(updatedHead, updatedHead.memory_value);
     }
-    let iteratedWordId = iteratedWord.id;
-    let m_word_next = iteratedWord.next;
-    let setIteratedWordNext = head.id; //setting it to the head Id, because you are placing the moved word as the next of the iterated word
 
-    //POST Updates:
-    await LanguageService.setLanguage(
+    //updates Tables
+    await LanguageService.setTables(
       req.app.get("db"),
       req.language.id,
-      m_shiftHead,
-      m_total_score
-    );
-
-    await LanguageService.setWordInsert(
-      req.app.get("db"),
-      req.language.id,
-      iteratedWordId,
-      setIteratedWordNext
-    );
-
-    await LanguageService.setGuessWord(
-      req.app.get("db"),
-      req.language.id,
-      head.id,
-      m_word_next,
-      m_memory_value,
-      m_wordCorrectCount,
-      m_wordIncorrectCount
+      m_total_score,
+      LL.createArray()
     );
 
     //response
+    let m_nextWord = allWords.find((word) => word.id === head.next);
     res.status(200).json({
       nextWord: m_nextWord.original,
       totalScore: m_total_score,
-      wordCorrectCount: m_nextWord.correct_count, //next word's correct count
-      wordIncorrectCount: m_nextWord.incorrect_count, //next word's incorrect count
-      answer: m_answer,
+      wordCorrectCount: m_nextWord.correct_count,
+      wordIncorrectCount: m_nextWord.incorrect_count,
+      answer: head.translation,
       isCorrect: isCorrect,
     });
   } catch (error) {

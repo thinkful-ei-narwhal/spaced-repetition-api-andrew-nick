@@ -33,53 +33,6 @@ const LanguageService = {
       .update({ head: head, total_score });
   },
 
-  setGuessWord(
-    db,
-    language_id,
-    id,
-    next,
-    memory_value,
-    correct_count,
-    incorrect_count
-  ) {
-    return db
-      .from("word")
-      .select(
-        "id",
-        "language_id",
-        "original",
-        "translation",
-        "next",
-        "memory_value",
-        "correct_count",
-        "incorrect_count"
-      )
-      .where({ language_id, id })
-      .update({
-        next,
-        memory_value,
-        correct_count,
-        incorrect_count,
-      });
-  },
-
-  setWordInsert(db, language_id, id, next) {
-    return db
-      .from("word")
-      .select(
-        "id",
-        "language_id",
-        "original",
-        "translation",
-        "next",
-        "memory_value",
-        "correct_count",
-        "incorrect_count"
-      )
-      .where({ language_id, id })
-      .update({ next });
-  },
-
   getLanguageHead(db, language_id) {
     return db
       .from("word")
@@ -114,6 +67,44 @@ const LanguageService = {
         "incorrect_count"
       )
       .where({ language_id });
+  },
+
+  setTables(db, language_id, total_score, wordArr) {
+    return db.transaction(async (block) => {
+      return Promise.all([
+        block("language")
+          .where({ id: language_id })
+          .update({ head: wordArr[0].id, total_score }),
+
+        ...wordArr.map((word, index) => {
+          const wordId = index + 1;
+          word.next =
+            wordId >= wordArr.length ? null : (word.next = wordArr[wordId].id);
+          return block("word")
+            .select(
+              "id",
+              "language_id",
+              "original",
+              "translation",
+              "next",
+              "memory_value",
+              "correct_count",
+              "incorrect_count"
+            )
+            .where({ id: word.id })
+            .update({
+              id: word.id,
+              language_id: word.language_id,
+              original: word.original,
+              translation: word.transaction,
+              next: word.next,
+              memory_value: word.memory_value,
+              correct_count: word.correct_count,
+              incorrect_count: word.incorrect_count,
+            });
+        }),
+      ]);
+    });
   },
 };
 

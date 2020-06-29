@@ -1,0 +1,128 @@
+class _Node {
+  constructor(value, next) {
+    this.value = value;
+    this.next = next;
+  }
+}
+
+class LinkedList {
+  constructor() {
+    this.head = null;
+  }
+
+  //Removes the head and goes to the next one
+  shiftHead() {
+    const poppedHead = this.head;
+    this.head = this.head.next;
+    return poppedHead;
+  }
+
+  insertFirst(item) {
+    this.head = new _Node(item, this.head);
+  }
+
+  insertAt(item, index) {
+    if (index > this.getAllNodes().length) {
+      console.log("Greater than length of list");
+      return;
+    }
+    if (index === 0) {
+      this.insertFirst(item);
+    } else {
+      const node = this._findNode(index - 1);
+      const newNode = new _Node(item, null);
+      newNode.next = node.next;
+      node.next = newNode;
+    }
+  }
+
+  insertLast(item) {
+    if (this.head === null) {
+      this.insertFirst(item);
+      return;
+    }
+    let node = this.head;
+    while (node.next !== null) {
+      node = node.next;
+    }
+    node.next = new _Node(item, null);
+  }
+
+  find(item) {
+    let node = this.head;
+    if (!this.head) {
+      return null;
+    }
+    while (node.value !== item) {
+      if (node.next === null) {
+        return null;
+      } else {
+        node = node.next;
+      }
+    }
+    return node;
+  }
+
+  printAllNodes() {
+    let node = this.head;
+    while (node !== null) {
+      console.log("Node ", node.value);
+      node = node.next;
+    }
+  }
+
+  _findNode(index) {
+    let node = this.head;
+    for (let i = 0; i < index; i++) {
+      node = node.next;
+    }
+    return node;
+  }
+
+  size() {
+    return this.getAllNodes().length;
+  }
+
+  isEmpty() {
+    return this.head === null ? true : false;
+  }
+
+  findPrevious(item) {
+    let node = this.head;
+    let previousNode = null;
+    while (node.value !== item) {
+      previousNode = node;
+      node = node.next;
+    }
+    return previousNode;
+  }
+
+  findLast() {
+    let node = this.head;
+    while (node.next) {
+      node = node.next;
+    }
+  }
+
+  getAllNodes() {
+    let node = this.head;
+    const arr = [];
+    while (node) {
+      arr.push(node);
+      node = node.next;
+    }
+    return arr;
+  }
+
+  createArray() {
+    let node = this.head;
+    let arr = [];
+    while (node !== null) {
+      arr.push(node.value);
+      node = node.next;
+    }
+    return arr;
+  }
+}
+
+module.exports = LinkedList;
